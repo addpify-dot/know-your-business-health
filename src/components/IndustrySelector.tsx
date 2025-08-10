@@ -35,7 +35,7 @@ export const IndustrySelector = ({ selectedIndustry, onIndustrySelect, language 
             onClick={() => onIndustrySelect(industry.id)}
           >
             <div className="text-center space-y-2">
-              <div className="text-2xl">{industry.icon}</div>
+              
               <div className="font-medium text-sm">
                 {language === 'hi' ? industry.nameHindi || industry.name : industry.name}
               </div>
@@ -44,14 +44,6 @@ export const IndustrySelector = ({ selectedIndustry, onIndustrySelect, language 
         ))}
       </div>
       
-      <Card className="p-4 cursor-pointer transition-all duration-300 hover:shadow-card hover:scale-105 border-dashed">
-        <div className="text-center space-y-2" onClick={() => onIndustrySelect('other')}>
-          <div className="text-2xl">📋</div>
-          <div className="font-medium text-sm">
-            {language === 'hi' ? 'अन्य' : 'Other'}
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };
