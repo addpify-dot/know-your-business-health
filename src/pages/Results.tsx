@@ -299,7 +299,6 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
         </div>
       </div>
 
-      </div>
     </div>
   );
 };
