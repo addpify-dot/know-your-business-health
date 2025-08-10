@@ -1,9 +1,14 @@
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Assessment, industries, businessFunctions } from "@/types/assessment";
-import { ArrowLeft, Download, RefreshCw, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, CheckCircle, AlertCircle, Share2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { saveAssessment } from "@/lib/storage";
 
 interface ResultsPageProps {
   assessment: Assessment;
@@ -15,6 +20,8 @@ interface ResultsPageProps {
 export const ResultsPage = ({ assessment, onRestart, onBack, language }: ResultsPageProps) => {
   const industry = industries.find(i => i.id === assessment.industry);
   const businessFunction = businessFunctions.find(f => f.id === assessment.businessFunction);
+  const { toast } = useToast();
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-success";
@@ -34,113 +41,223 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
     }
   };
 
-  const handleDownloadReport = () => {
-    // This would generate and download a PDF report
-    console.log("Downloading report...");
+  const getPoints = (answer: any) => {
+    if (answer === 'yes' || answer === 'always') return 5;
+    if (answer === 'sometimes' || answer === 'often') return 3;
+    if (answer === 'not-sure') return 2;
+    if (typeof answer === 'number') return Math.max(0, Math.min(5, answer));
+    return 0;
+  };
+
+  const industryItems = (industry?.questions || []).map(q => ({
+    id: q.id,
+    text: language === 'hi' ? q.textHindi || q.text : q.text,
+    points: getPoints(assessment.industryAnswers[q.id]),
+    area: 'industry' as const,
+  }));
+  const functionItems = (businessFunction?.questions || []).map(q => ({
+    id: q.id,
+    text: language === 'hi' ? q.textHindi || q.text : q.text,
+    points: getPoints(assessment.functionAnswers[q.id]),
+    area: 'function' as const,
+  }));
+  const allItems = [...industryItems, ...functionItems];
+  const strengths = allItems
+    .filter(i => i.points >= 4)
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 3);
+  const problems = allItems
+    .filter(i => i.points <= 2)
+    .sort((a, b) => a.points - b.points)
+    .slice(0, 5);
+
+  const handleDownloadReport = async () => {
+    const node = reportRef.current;
+    if (!node) return;
+    const canvas = await html2canvas(node, { scale: 2, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let y = 0;
+    if (imgHeight < pageHeight) {
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+    } else {
+      // Split across pages
+      let position = 0;
+      while (position < imgHeight) {
+        pdf.addImage(imgData, 'PNG', 0, -position, imgWidth, imgHeight);
+        position += pageHeight;
+        if (position < imgHeight) pdf.addPage();
+      }
+    }
+    pdf.save('Business-Health-Report.pdf');
+  };
+
+  const handleShareWhatsApp = () => {
+    const title = language === 'hi' ? 'मेरी बिज़नेस हेल्थ रिपोर्ट' : 'My Business Health Report';
+    const summary = `${title}: ${assessment.scores.overall}%`;
+    const tips = problems.map((p, idx) => `${idx + 1}. ${p.text}`).join('\n');
+    const text = `${summary}\n${language === 'hi' ? 'मुख्य सुधार:' : 'Top fixes:'}\n${tips}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleSave = () => {
+    saveAssessment({
+      id: String(Date.now()),
+      date: new Date().toISOString(),
+      language,
+      data: assessment,
+    });
+    toast({
+      title: language === 'hi' ? 'सेव हो गया' : 'Saved',
+      description: language === 'hi' ? 'आपकी रिपोर्ट सेव हो गई है' : 'Your report has been saved',
+    });
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-            {language === 'hi' ? 'आपका व्यापार स्वास्थ्य रिपोर्ट' : 'Your Business Health Report'}
-          </h1>
-          <div className="flex justify-center items-center gap-4 text-muted-foreground">
-            <span>{industry?.name}</span>
-            <span>•</span>
-            <span>{businessFunction?.name}</span>
+        {/* Report Content (captured for PDF) */}
+        <div ref={reportRef} className="space-y-6">
+          {/* Header */}
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
+              {language === 'hi' ? 'आपका व्यापार स्वास्थ्य रिपोर्ट' : 'Your Business Health Report'}
+            </h1>
+            <div className="flex justify-center items-center gap-4 text-muted-foreground">
+              <span>{industry?.name}</span>
+              <span>•</span>
+              <span>{businessFunction?.name}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Overall Score */}
-        <Card className="p-8 text-center space-y-6 bg-gradient-to-r from-card to-card/50 shadow-card">
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-foreground">
-              {language === 'hi' ? 'समग्र स्वास्थ्य स्कोर' : 'Overall Health Score'}
-            </h2>
-            <div className={cn("text-6xl font-bold", getScoreColor(assessment.scores.overall))}>
-              {assessment.scores.overall}%
-            </div>
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              {getScoreMessage(assessment.scores.overall)}
-            </p>
-          </div>
-        </Card>
-
-        {/* Detailed Scores */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl">{industry?.icon}</div>
-              <h3 className="text-xl font-semibold">
-                {language === 'hi' ? 'उद्योग स्कोर' : 'Industry Score'}
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">{industry?.name}</span>
-                <span className={cn("text-2xl font-bold", getScoreColor(assessment.scores.industry))}>
-                  {assessment.scores.industry}%
-                </span>
-              </div>
-              <Progress value={assessment.scores.industry} className="h-3" />
-            </div>
-          </Card>
-
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="text-2xl">{businessFunction?.icon}</div>
-              <h3 className="text-xl font-semibold">
-                {language === 'hi' ? 'फ़ंक्शन स्कोर' : 'Function Score'}
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">{businessFunction?.name}</span>
-                <span className={cn("text-2xl font-bold", getScoreColor(assessment.scores.function))}>
-                  {assessment.scores.function}%
-                </span>
-              </div>
-              <Progress value={assessment.scores.function} className="h-3" />
-            </div>
-          </Card>
-        </div>
-
-        {/* Recommendations */}
-        <Card className="p-6 space-y-6">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-accent" />
-            <h3 className="text-2xl font-semibold">
-              {language === 'hi' ? 'सुधार के सुझाव' : 'Improvement Recommendations'}
-            </h3>
-          </div>
-          
-          {assessment.recommendations.length > 0 ? (
+          {/* Overall Score */}
+          <Card className="p-8 text-center space-y-6 bg-gradient-to-r from-card to-card/50 shadow-card">
             <div className="space-y-4">
-              {assessment.recommendations.map((recommendation, index) => (
-                <div key={index} className="flex gap-4 p-4 bg-muted/50 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                  <p className="text-foreground leading-relaxed">{recommendation}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle className="w-12 h-12 mx-auto mb-4 text-success" />
-              <p className="text-lg">
-                {language === 'hi' 
-                  ? 'बहुत बढ़िया! आपका व्यापार बेहतरीन चल रहा है।'
-                  : 'Excellent! Your business is performing very well.'
-                }
+              <h2 className="text-2xl font-semibold text-foreground">
+                {language === 'hi' ? 'समग्र स्वास्थ्य स्कोर' : 'Overall Health Score'}
+              </h2>
+              <div className={cn("text-6xl font-bold", getScoreColor(assessment.scores.overall))}>
+                {assessment.scores.overall}%
+              </div>
+              <p className="text-lg text-muted-foreground max-w-md mx-auto">
+                {getScoreMessage(assessment.scores.overall)}
               </p>
             </div>
-          )}
-        </Card>
+          </Card>
+
+          {/* Detailed Scores */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">{industry?.icon}</div>
+                <h3 className="text-xl font-semibold">
+                  {language === 'hi' ? 'उद्योग स्कोर' : 'Industry Score'}
+                </h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{industry?.name}</span>
+                  <span className={cn("text-2xl font-bold", getScoreColor(assessment.scores.industry))}>
+                    {assessment.scores.industry}%
+                  </span>
+                </div>
+                <Progress value={assessment.scores.industry} className="h-3" />
+              </div>
+            </Card>
+
+            <Card className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">{businessFunction?.icon}</div>
+                <h3 className="text-xl font-semibold">
+                  {language === 'hi' ? 'फ़ंक्शन स्कोर' : 'Function Score'}
+                </h3>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{businessFunction?.name}</span>
+                  <span className={cn("text-2xl font-bold", getScoreColor(assessment.scores.function))}>
+                    {assessment.scores.function}%
+                  </span>
+                </div>
+                <Progress value={assessment.scores.function} className="h-3" />
+              </div>
+            </Card>
+          </div>
+
+          {/* Strengths and Problems */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card className="p-6 space-y-4">
+              <h3 className="text-xl font-semibold">{language === 'hi' ? 'शीर्ष 3 ताकतें' : 'Top 3 Strengths'}</h3>
+              <div className="space-y-3">
+                {strengths.length > 0 ? strengths.map((s, i) => (
+                  <div key={i} className="p-3 rounded-md bg-success/10 text-success">
+                    ✓ {s.text}
+                  </div>
+                )) : (
+                  <p className="text-muted-foreground">{language === 'hi' ? 'अभी कोई विशेष ताकत नहीं दिखी' : 'No standout strengths yet.'}</p>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-6 space-y-4">
+              <h3 className="text-xl font-semibold">{language === 'hi' ? 'शीर्ष 5 समस्याएँ/जोखिम' : 'Top 5 Problems / Risks'}</h3>
+              <div className="space-y-3">
+                {problems.length > 0 ? problems.map((p, i) => (
+                  <div key={i} className="p-3 rounded-md bg-destructive/10 text-destructive">
+                    • {p.text}
+                  </div>
+                )) : (
+                  <p className="text-muted-foreground">{language === 'hi' ? 'कोई बड़ी समस्या नहीं' : 'No major problems detected.'}</p>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Recommendations */}
+          <Card className="p-6 space-y-6">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-accent" />
+              <h3 className="text-2xl font-semibold">
+                {language === 'hi' ? 'सुधार के सुझाव' : 'Improvement Recommendations'}
+              </h3>
+            </div>
+            
+            {assessment.recommendations.length > 0 ? (
+              <div className="space-y-4">
+                {assessment.recommendations.map((recommendation, index) => (
+                  <div key={index} className="flex gap-4 p-4 bg-muted/50 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-foreground leading-relaxed">{recommendation}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {problems.map((p, idx) => (
+                  <div key={idx} className="flex gap-4 p-4 bg-muted/50 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-foreground leading-relaxed">
+                        {language === 'hi' 
+                          ? `कार्रवाई (30 दिन): ${p.text} के लिए सरल कदम शुरू करें। मुफ्त टूल जैसे Google Business Profile, WhatsApp स्टेटस, और Excel/खाता-बही का उपयोग करें।`
+                          : `Action (30 days): Start simple steps for "${p.text}". Use free tools like Google Business Profile, WhatsApp Status, and Excel/account book.`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-6">
+        <div className="flex flex-col sm:flex-row gap-4 pt-2">
           <Button
             variant="outline"
             onClick={onBack}
@@ -149,21 +266,27 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
             <ArrowLeft className="w-4 h-4" />
             {language === 'hi' ? 'वापस जाएं' : 'Go Back'}
           </Button>
-          
+          <Button onClick={handleShareWhatsApp} className="flex items-center gap-2 flex-1 bg-primary/90">
+            <Share2 className="w-4 h-4" />
+            {language === 'hi' ? 'व्हाट्सऐप पर शेयर करें' : 'Share on WhatsApp'}
+          </Button>
+          <Button onClick={handleSave} variant="outline" className="flex items-center gap-2 flex-1">
+            <Save className="w-4 h-4" />
+            {language === 'hi' ? 'रिपोर्ट सेव करें' : 'Save Result'}
+          </Button>
           <Button
             onClick={handleDownloadReport}
             className="flex items-center gap-2 flex-1 bg-gradient-secondary"
           >
             <Download className="w-4 h-4" />
-            {language === 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download Report'}
+            {language === 'hi' ? 'रिपोर्ट डाउनलोड करें' : 'Download PDF'}
           </Button>
-          
           <Button
             onClick={onRestart}
             className="flex items-center gap-2 flex-1 bg-gradient-primary shadow-primary"
           >
             <RefreshCw className="w-4 h-4" />
-            {language === 'hi' ? 'नई जांच शुरू करें' : 'Start New Assessment'}
+            {language === 'hi' ? 'नई जांच शुरू करें' : 'Retake Assessment'}
           </Button>
         </div>
 
@@ -174,6 +297,8 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
             : 'Specially designed for Indian small businesses'
           }
         </div>
+      </div>
+
       </div>
     </div>
   );

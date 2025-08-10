@@ -43,40 +43,32 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
   };
 
   const calculateScores = () => {
+    const getPoints = (answer: any) => {
+      if (answer === 'yes' || answer === 'always') return 5;
+      if (answer === 'sometimes' || answer === 'often') return 3;
+      if (answer === 'not-sure') return 2;
+      if (typeof answer === 'number') return Math.max(0, Math.min(5, answer));
+      return 0;
+    };
+
     let industryScore = 0;
     let functionScore = 0;
-    
+
     if (currentIndustry) {
-      const industryTotal = currentIndustry.questions.reduce((acc, q) => acc + q.weight, 0);
-      const industryEarned = currentIndustry.questions.reduce((acc, q) => {
-        const answer = industryAnswers[q.id];
-        if (answer === 'yes' || (typeof answer === 'number' && answer >= 4)) {
-          return acc + q.weight;
-        }
-        if (typeof answer === 'number' && answer >= 2) {
-          return acc + (q.weight * 0.5);
-        }
-        return acc;
-      }, 0);
-      industryScore = Math.round((industryEarned / industryTotal) * 100);
+      const questions = currentIndustry.questions;
+      const totalPossible = questions.length * 5;
+      const earned = questions.reduce((acc, q) => acc + getPoints(industryAnswers[q.id]), 0);
+      industryScore = totalPossible > 0 ? Math.round((earned / totalPossible) * 100) : 0;
     }
 
     if (currentFunction) {
-      const functionTotal = currentFunction.questions.reduce((acc, q) => acc + q.weight, 0);
-      const functionEarned = currentFunction.questions.reduce((acc, q) => {
-        const answer = functionAnswers[q.id];
-        if (answer === 'yes' || (typeof answer === 'number' && answer >= 4)) {
-          return acc + q.weight;
-        }
-        if (typeof answer === 'number' && answer >= 2) {
-          return acc + (q.weight * 0.5);
-        }
-        return acc;
-      }, 0);
-      functionScore = Math.round((functionEarned / functionTotal) * 100);
+      const questions = currentFunction.questions;
+      const totalPossible = questions.length * 5;
+      const earned = questions.reduce((acc, q) => acc + getPoints(functionAnswers[q.id]), 0);
+      functionScore = totalPossible > 0 ? Math.round((earned / totalPossible) * 100) : 0;
     }
 
-    const overallScore = Math.round((industryScore + functionScore) / 2);
+    const overallScore = Math.round(((industryScore || 0) + (functionScore || 0)) / 2);
 
     return { overall: overallScore, industry: industryScore, function: functionScore };
   };

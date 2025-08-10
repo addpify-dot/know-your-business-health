@@ -42,6 +42,38 @@ export const QuestionCard = ({ question, answer, onAnswer, language, className }
         </div>
       )}
       
+      {question.type === 'multiple-choice' && (
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            question.options || ['yes','sometimes','not-sure','no']
+          ).map((opt) => {
+            const isActive = answer === opt;
+            const label = (() => {
+              switch (opt) {
+                case 'yes': return language === 'hi' ? 'हाँ / हमेशा' : 'Yes / Always';
+                case 'sometimes': return language === 'hi' ? 'कभी-कभी' : 'Sometimes';
+                case 'not-sure': return language === 'hi' ? 'पता नहीं' : 'Not Sure';
+                case 'no': return language === 'hi' ? 'नहीं / कभी नहीं' : 'No / Never';
+                default: return String(opt);
+              }
+            })();
+            return (
+              <Button
+                key={opt}
+                variant={isActive ? 'default' : 'outline'}
+                onClick={() => onAnswer(question.id, opt)}
+                className={cn(
+                  "transition-all duration-300",
+                  isActive && "bg-gradient-primary shadow-primary"
+                )}
+              >
+                {label}
+              </Button>
+            );
+          })}
+        </div>
+      )}
+      
       {question.type === 'rating' && (
         <div className="flex gap-2 justify-center">
           {[1, 2, 3, 4, 5].map((rating) => (
