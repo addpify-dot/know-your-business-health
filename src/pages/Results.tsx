@@ -1,14 +1,15 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Assessment, industries, businessFunctions } from "@/types/assessment";
+import { Assessment, industries, businessFunctions, BusinessFunction } from "@/types/assessment";
 import { ArrowLeft, Download, RefreshCw, CheckCircle, AlertCircle, Share2, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { saveAssessment } from "@/lib/storage";
+import { saveAssessment, getFunctionDetail, saveFunctionDetail } from "@/lib/storage";
+import FunctionDetailsModal from "@/components/FunctionDetailsModal";
 
 interface ResultsPageProps {
   assessment: Assessment;
@@ -22,6 +23,11 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
   const businessFunction = businessFunctions.find(f => f.id === assessment.businessFunction);
   const { toast } = useToast();
   const reportRef = useRef<HTMLDivElement>(null);
+
+  // Detailed function assessment modal state
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [activeFunc, setActiveFunc] = useState<BusinessFunction | null>(null);
+  const [initialFuncAnswers, setInitialFuncAnswers] = useState<Record<string, any>>({});
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-success";
@@ -254,6 +260,43 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
               </div>
             )}
           </Card>
+
+          {/* Detailed assessments by function */}
+          <Card className="p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <h3 className="text-2xl font-semibold">
+                {language === 'hi' ? 'फ़ंक्शन-वार विस्तृत जाँच' : 'Detailed Assessments by Function'}
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {businessFunctions.map((func) => {
+                const saved = getFunctionDetail(func.id);
+                return (
+                  <Card key={func.id} className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{func.icon}</div>
+                      <div>
+                        <div className="font-semibold">{language === 'hi' ? func.nameHindi || func.name : func.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {saved ? (language === 'hi' ? 'सेव किया गया' : 'Saved') : (language === 'hi' ? 'अभी तक पूरा नहीं' : 'Not completed')}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setActiveFunc(func);
+                        setInitialFuncAnswers(saved?.answers || {});
+                        setDetailsOpen(true);
+                      }}
+                    >
+                      {saved ? (language === 'hi' ? 'एडिट' : 'Edit') : (language === 'hi' ? 'एड करें' : 'Add')}
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+          </Card>
         </div>
 
         {/* Actions */}
@@ -298,6 +341,28 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
           }
         </div>
       </div>
+
+      {/* Modal for function details */}
+      <FunctionDetailsModal
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        func={activeFunc}
+        language={language}
+        initialAnswers={initialFuncAnswers}
+        onSave={(answers) => {
+          if (!activeFunc) return;
+          saveFunctionDetail({
+            functionId: activeFunc.id,
+            answers,
+            date: new Date().toISOString(),
+            language,
+          });
+          toast({
+            title: language === 'hi' ? 'सेव हुआ' : 'Saved',
+            description: language === 'hi' ? 'विस्तृत जाँच सेव हो गई' : 'Detailed assessment saved',
+          });
+        }}
+      />
 
     </div>
   );

@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { AssessmentPage } from "./Assessment";
 import { ResultsPage } from "./Results";
 import { LanguageToggle } from "@/components/LanguageToggle";
-import { Assessment } from "@/types/assessment";
-import { CheckCircle, TrendingUp, Users, Award } from "lucide-react";
+import { Assessment, industries } from "@/types/assessment";
+import { CheckCircle, TrendingUp, Users, Award, ShoppingBag, Factory, Utensils, Briefcase, Sprout, Building2, Package, ShoppingCart, Truck, HeartPulse, Sparkles } from "lucide-react";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'assessment' | 'results'>('landing');
@@ -149,12 +149,34 @@ const Index = () => {
           <h2 className="text-2xl font-bold text-center text-foreground">
             {language === 'hi' ? 'समर्थित उद्योग' : 'Supported Industries'}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-center">
-            {['🛍️', '🏭', '🍽️', '🎓', '🏥', '💻', '🏗️', '🚛', '🌾', '🏠', '🏨', '👕'].map((emoji, index) => (
-              <div key={index} className="p-4 rounded-lg bg-background/50 hover:bg-background transition-colors duration-300">
-                <div className="text-2xl mb-2">{emoji}</div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 text-center">
+            {industries.map((ind) => {
+              const Icon = ({ className = "w-6 h-6" }) => {
+                switch (ind.id) {
+                  case 'retail': return <ShoppingBag className={className} />;
+                  case 'manufacturing': return <Factory className={className} />;
+                  case 'food-beverages': return <Utensils className={className} />;
+                  case 'service': return <Briefcase className={className} />;
+                  case 'agriculture': return <Sprout className={className} />;
+                  case 'construction-realestate': return <Building2 className={className} />;
+                  case 'wholesale': return <Package className={className} />;
+                  case 'ecommerce': return <ShoppingCart className={className} />;
+                  case 'transport-logistics': return <Truck className={className} />;
+                  case 'health-wellness': return <HeartPulse className={className} />;
+                  default: return <Sparkles className={className} />;
+                }
+              };
+              return (
+                <div key={ind.id} className="p-4 rounded-lg bg-background/50 hover:bg-background transition-colors duration-300 flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="text-sm font-medium">
+                    {language === 'hi' ? ind.nameHindi || ind.name : ind.name}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Card>
 

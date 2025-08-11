@@ -367,4 +367,23 @@ export const businessFunctions: BusinessFunction[] = [
       }
     ]
   }
+,
+  {
+    id: 'team-management',
+    name: 'Team Management',
+    nameHindi: 'टीम प्रबंधन',
+    icon: '👥',
+    questions: [
+      { id: 'tm1', text: 'Are roles and responsibilities clearly defined?', textHindi: 'क्या भूमिकाएँ और जिम्मेदारियाँ स्पष्ट रूप से निर्धारित हैं?', type: 'yes-no', weight: 10 },
+      { id: 'tm2', text: 'Do you conduct weekly team meetings?', textHindi: 'क्या आप साप्ताहिक टीम बैठकें करते हैं?', type: 'yes-no', weight: 8 },
+      { id: 'tm3', text: 'Do you have written SOPs for key tasks?', textHindi: 'क्या महत्वपूर्ण कार्यों के लिए लिखित SOPs हैं?', type: 'yes-no', weight: 9 },
+      { id: 'tm4', text: 'Do you track performance with simple KPIs?', textHindi: 'क्या आप सरल KPI के साथ प्रदर्शन ट्रैक करते हैं?', type: 'yes-no', weight: 8 },
+      { id: 'tm5', text: 'Do you provide regular training or upskilling?', textHindi: 'क्या आप नियमित प्रशिक्षण या कौशल-वृद्धि प्रदान करते हैं?', type: 'yes-no', weight: 7 },
+      { id: 'tm6', text: 'Is there an attendance and leave policy?', textHindi: 'क्या उपस्थिति और अवकाश नीति है?', type: 'yes-no', weight: 7 },
+      { id: 'tm7', text: 'Do you have a conflict resolution process?', textHindi: 'क्या आपके पास विवाद समाधान प्रक्रिया है?', type: 'yes-no', weight: 7 },
+      { id: 'tm8', text: 'Do you recognize and reward good performance?', textHindi: 'क्या आप अच्छे प्रदर्शन को पहचानते और पुरस्कृत करते हैं?', type: 'yes-no', weight: 6 },
+      { id: 'tm9', text: 'Do you follow a structured hiring process/checklist?', textHindi: 'क्या आप एक संरचित भर्ती प्रक्रिया/चेकलिस्ट का पालन करते हैं?', type: 'yes-no', weight: 7 },
+      { id: 'tm10', text: 'Do you ensure backups/handovers for key roles?', textHindi: 'क्या आप प्रमुख भूमिकाओं के लिए बैकअप/हैंडओवर सुनिश्चित करते हैं?', type: 'yes-no', weight: 8 }
+    ]
+  }
 ];
