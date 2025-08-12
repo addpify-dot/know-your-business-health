@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Share2, Download } from "lucide-react";
+import { Menu, Share2, Download, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -98,6 +98,10 @@ const AppMenu = () => {
             </NavigationMenuList>
           </NavigationMenu>
           <div className="flex items-center gap-2 ml-2">
+            <Button variant="default" size="sm" onClick={() => window.dispatchEvent(new Event("bhc:open-ai-chat"))} className="hidden md:inline-flex">
+              <Bot className="h-4 w-4 mr-2" />
+              Smart With AI
+            </Button>
             <Button variant="ghost" size="sm" onClick={handleShareApp} className="hidden md:inline-flex">
               <Share2 className="h-4 w-4 mr-2" />
               Share App
@@ -148,6 +152,10 @@ const AppMenu = () => {
                 >
                   Dashboard
                 </Link>
+                <Button onClick={() => window.dispatchEvent(new Event("bhc:open-ai-chat"))} className="justify-start">
+                  <Bot className="h-4 w-4 mr-2" />
+                  Smart With AI
+                </Button>
                 <Button onClick={handleShareApp} variant="ghost" className="justify-start">
                   <Share2 className="h-4 w-4 mr-2" />
                   Share App

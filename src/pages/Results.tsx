@@ -173,6 +173,14 @@ const reportRef = useRef<HTMLDivElement>(null);
     return () => window.removeEventListener("bhc:download-results", handler);
   }, []);
 
+  // Expose current assessment globally for AI chat context
+  useEffect(() => {
+    (window as any).bhcCurrentAssessment = assessment;
+    return () => {
+      try { delete (window as any).bhcCurrentAssessment; } catch {}
+    };
+  }, [assessment]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -401,6 +409,14 @@ const reportRef = useRef<HTMLDivElement>(null);
           </Button>
           <Button onClick={() => navigate('/dashboard', { state: { assessment, language } })} variant="outline" className="flex items-center gap-2 flex-1">
             {language === 'hi' ? 'डैशबोर्ड देखें' : 'View Dashboard'}
+          </Button>
+          <Button
+            onClick={() => window.dispatchEvent(new Event('bhc:open-ai-chat'))}
+            variant="outline"
+            className="flex items-center gap-2 flex-1"
+          >
+            <Bot className="w-4 h-4" />
+            {language === 'hi' ? 'AI से पूछें' : 'Ask Smart With AI'}
           </Button>
           <Button
             onClick={handleDownloadReport}
