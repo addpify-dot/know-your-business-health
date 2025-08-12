@@ -6,6 +6,7 @@ import { ResultsPage } from "./Results";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Assessment, industries } from "@/types/assessment";
 import { CheckCircle, TrendingUp, Users, Award, ShoppingBag, Factory, Utensils, Briefcase, Sprout, Building2, Package, ShoppingCart, Truck, HeartPulse, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'assessment' | 'results'>('landing');
@@ -57,7 +58,14 @@ const Index = () => {
             {language === 'hi' ? 'बिज़नेस हेल्थ चेकअप' : 'Business Health Checkup'}
           </h1>
         </div>
-        <LanguageToggle language={language} onLanguageChange={setLanguage} />
+<div className="flex items-center gap-3">
+          <Link to="/dashboard">
+            <Button variant="outline" size="sm">
+              {language === 'hi' ? 'डैशबोर्ड' : 'Dashboard'}
+            </Button>
+          </Link>
+          <LanguageToggle language={language} onLanguageChange={setLanguage} />
+        </div>
       </header>
 
       {/* Hero Section */}

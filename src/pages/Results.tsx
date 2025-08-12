@@ -10,6 +10,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { saveAssessment, getFunctionDetail, saveFunctionDetail } from "@/lib/storage";
 import FunctionDetailsModal from "@/components/FunctionDetailsModal";
+import { useNavigate } from "react-router-dom";
 
 interface ResultsPageProps {
   assessment: Assessment;
@@ -22,7 +23,8 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
   const industry = industries.find(i => i.id === assessment.industry);
   const businessFunction = businessFunctions.find(f => f.id === assessment.businessFunction);
   const { toast } = useToast();
-  const reportRef = useRef<HTMLDivElement>(null);
+const reportRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Detailed function assessment modal state
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -387,6 +389,9 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
           <Button onClick={handleSave} variant="outline" className="flex items-center gap-2 flex-1">
             <Save className="w-4 h-4" />
             {language === 'hi' ? 'रिपोर्ट सेव करें' : 'Save Result'}
+          </Button>
+          <Button onClick={() => navigate('/dashboard', { state: { assessment, language } })} variant="outline" className="flex items-center gap-2 flex-1">
+            {language === 'hi' ? 'डैशबोर्ड देखें' : 'View Dashboard'}
           </Button>
           <Button
             onClick={handleDownloadReport}
