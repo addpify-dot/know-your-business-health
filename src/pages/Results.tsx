@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Assessment, industries, businessFunctions, BusinessFunction } from "@/types/assessment";
-import { ArrowLeft, Download, RefreshCw, CheckCircle, AlertCircle, Share2, Save } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, CheckCircle, AlertCircle, Share2, Save, Bot, GraduationCap, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
@@ -76,6 +76,41 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
     .filter(i => i.points <= 2)
     .sort((a, b) => a.points - b.points)
     .slice(0, 5);
+
+  // Suggested services logic
+  const overallScore = assessment.scores.overall;
+  const functionScore = assessment.scores.function;
+  const fnId = businessFunction?.id;
+
+  const automationRelevantIds = new Set(['business-operation','ecommerce','retail','wholesale','manufacturing','service']);
+  const needsAutomation = (fnId ? automationRelevantIds.has(fnId) && functionScore < 70 : false) || overallScore < 65;
+  const needsTraining = (fnId === 'team-management' && functionScore < 80) || overallScore < 60 || problems.length >= 3;
+
+  const suggestions: Array<{ id: string; title: string; description: string; href: string; type: 'automation' | 'training'; }> = [];
+
+  if (needsAutomation) {
+    suggestions.push({
+      id: 'smart-ai',
+      title: language === 'hi' ? 'स्मार्ट विद एआई' : 'Smart With AI',
+      description: language === 'hi'
+        ? 'लीड, फॉलो-अप, रिमाइंडर, रिपोर्ट आदि के लिए एआई ऑटोमेशन से उत्पादकता बढ़ाएं।'
+        : 'Boost productivity with AI automations for leads, follow-ups, reminders, reports, and more.',
+      href: 'https://smart-with-ai-india.lovable.app/?ref=bhc&src=results',
+      type: 'automation',
+    });
+  }
+
+  if (needsTraining) {
+    suggestions.push({
+      id: 'bb-lfp',
+      title: language === 'hi' ? 'बड़ा बिज़नेस LFP (डॉ. विवेक बिंद्रा)' : 'Bada Business LFP (Dr. Vivek Bindra)',
+      description: language === 'hi'
+        ? 'टीम, सेल्स, ऑपरेशंस और फाइनेंस के लिए सिस्टम बनाने हेतु प्रैक्टिकल बिज़नेस ट्रेनिंग।'
+        : 'Practical business training to build systems for team, sales, operations, and finance.',
+      href: 'https://www.badabusiness.com/lfp?pp_code=BIHH037619&utm_source=bhc&utm_medium=app&utm_campaign=suggested_services',
+      type: 'training',
+    });
+  }
 
   const handleDownloadReport = async () => {
     const node = reportRef.current;
@@ -262,6 +297,40 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
               </div>
             )}
           </Card>
+
+          {/* Suggested Services */}
+          {suggestions.length > 0 && (
+            <Card className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <h3 className="text-2xl font-semibold">
+                  {language === 'hi' ? 'सुझाए गए सेवाएं' : 'Suggested Services'}
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {suggestions.map((s) => (
+                  <div key={s.id} className="p-4 rounded-lg bg-muted/50 flex items-start gap-4">
+                    <div className="mt-1">
+                      {s.type === 'automation' ? (
+                        <Bot className="w-6 h-6 text-primary" aria-hidden="true" />
+                      ) : (
+                        <GraduationCap className="w-6 h-6 text-accent" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold mb-1">{s.title}</div>
+                      <p className="text-sm text-muted-foreground mb-3">{s.description}</p>
+                      <a href={s.href} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" variant="outline" className="inline-flex items-center gap-2">
+                          {language === 'hi' ? 'देखें' : 'Explore'}
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
 
           {/* Detailed assessments by function */}
           <Card className="p-6 space-y-4">
