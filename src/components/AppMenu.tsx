@@ -1,5 +1,5 @@
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Menu, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -15,9 +15,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { getSavedAssessments } from "@/lib/storage";
 
 const AppMenu = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
   const navLinkCls = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -25,6 +28,39 @@ const AppMenu = () => {
       isActive ? "text-primary font-medium" : "text-foreground/80 hover:text-primary"
     );
 
+  const handleShareApp = async () => {
+    const url = window.location.origin;
+    const title = "Business Health Checkup";
+    const text = "Check your business health in minutes.";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+      } catch {
+        // user canceled share
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast("Link copied to clipboard");
+      } catch {
+        toast("Copy failed. Please copy the URL manually.");
+      }
+    }
+  };
+
+  const handleDownloadResults = () => {
+    if (location.pathname === "/") {
+      window.dispatchEvent(new Event("bhc:download-results"));
+      return;
+    }
+    const saved = getSavedAssessments();
+    if (saved.length > 0) {
+      navigate("/", { state: { autoDownloadResults: true } });
+    } else {
+      navigate("/");
+      toast("Please complete an assessment first");
+    }
+  };
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -61,6 +97,16 @@ const AppMenu = () => {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
+          <div className="flex items-center gap-2 ml-2">
+            <Button variant="ghost" size="sm" onClick={handleShareApp} className="hidden md:inline-flex">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share App
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadResults} className="hidden md:inline-flex">
+              <Download className="h-4 w-4 mr-2" />
+              Download Results
+            </Button>
+          </div>
         </nav>
 
         {/* Mobile menu */}
@@ -102,6 +148,14 @@ const AppMenu = () => {
                 >
                   Dashboard
                 </Link>
+                <Button onClick={handleShareApp} variant="ghost" className="justify-start">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share App
+                </Button>
+                <Button onClick={handleDownloadResults} variant="outline" className="justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Results
+                </Button>
               </nav>
             </SheetContent>
           </Sheet>

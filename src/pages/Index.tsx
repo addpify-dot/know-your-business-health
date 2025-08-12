@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AssessmentPage } from "./Assessment";
@@ -6,13 +6,15 @@ import { ResultsPage } from "./Results";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Assessment, industries } from "@/types/assessment";
 import { CheckCircle, TrendingUp, Users, Award, ShoppingBag, Factory, Utensils, Briefcase, Sprout, Building2, Package, ShoppingCart, Truck, HeartPulse, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
-
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { getSavedAssessments } from "@/lib/storage";
+import { toast } from "sonner";
 const Index = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'assessment' | 'results'>('landing');
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [language, setLanguage] = useState<'en' | 'hi'>('en');
-
+  const location = useLocation();
+  const navigate = useNavigate();
   const handleStartAssessment = () => {
     setCurrentView('assessment');
   };
@@ -30,6 +32,29 @@ const Index = () => {
   const handleBackToAssessment = () => {
     setCurrentView('assessment');
   };
+
+  // Auto-download flow via navigation state
+  useEffect(() => {
+    const state: any = (location as any)?.state;
+    if (state?.autoDownloadResults) {
+      let data = assessment;
+      if (!data) {
+        const saved = getSavedAssessments();
+        data = saved[0]?.data || null;
+        if (data) setAssessment(data);
+      }
+      if (data) {
+        setCurrentView('results');
+        setTimeout(() => {
+          window.dispatchEvent(new Event('bhc:download-results'));
+        }, 300);
+      } else {
+        toast('Please complete an assessment first');
+      }
+      navigate('/', { replace: true, state: {} });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location?.state]);
 
   if (currentView === 'assessment') {
     return <AssessmentPage onComplete={handleAssessmentComplete} />;

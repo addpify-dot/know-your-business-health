@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -163,6 +163,15 @@ const reportRef = useRef<HTMLDivElement>(null);
       description: language === 'hi' ? 'आपकी रिपोर्ट सेव हो गई है' : 'Your report has been saved',
     });
   };
+
+  // Listen for global download trigger
+  useEffect(() => {
+    const handler = () => {
+      handleDownloadReport();
+    };
+    window.addEventListener("bhc:download-results", handler);
+    return () => window.removeEventListener("bhc:download-results", handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
