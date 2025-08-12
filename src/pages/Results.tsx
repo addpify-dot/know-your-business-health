@@ -107,7 +107,9 @@ export const ResultsPage = ({ assessment, onRestart, onBack, language }: Results
     const title = language === 'hi' ? 'मेरी बिज़नेस हेल्थ रिपोर्ट' : 'My Business Health Report';
     const summary = `${title}: ${assessment.scores.overall}%`;
     const tips = problems.map((p, idx) => `${idx + 1}. ${p.text}`).join('\n');
-    const text = `${summary}\n${language === 'hi' ? 'मुख्य सुधार:' : 'Top fixes:'}\n${tips}`;
+    const appLink = window.location.origin;
+    const linkLabel = language === 'hi' ? 'ऐप लिंक' : 'App link';
+    const text = `${summary}\n${language === 'hi' ? 'मुख्य सुधार:' : 'Top fixes:'}\n${tips}\n\n${linkLabel}: ${appLink}`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };

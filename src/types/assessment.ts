@@ -385,5 +385,23 @@ export const businessFunctions: BusinessFunction[] = [
       { id: 'tm9', text: 'Do you follow a structured hiring process/checklist?', textHindi: 'क्या आप एक संरचित भर्ती प्रक्रिया/चेकलिस्ट का पालन करते हैं?', type: 'yes-no', weight: 7 },
       { id: 'tm10', text: 'Do you ensure backups/handovers for key roles?', textHindi: 'क्या आप प्रमुख भूमिकाओं के लिए बैकअप/हैंडओवर सुनिश्चित करते हैं?', type: 'yes-no', weight: 8 }
     ]
+  },
+  {
+    id: 'business-operation',
+    name: 'Business Operation',
+    nameHindi: 'व्यवसाय संचालन',
+    icon: '⚙️',
+    questions: [
+      { id: 'bo1', text: 'Do you have documented processes for key activities?', textHindi: 'क्या आपके पास प्रमुख कार्यों के लिए लिखित प्रक्रियाएँ हैं?', type: 'yes-no', weight: 10 },
+      { id: 'bo2', text: 'Do you follow a daily/weekly operations checklist?', textHindi: 'क्या आप दैनिक/साप्ताहिक ऑपरेशंस चेकलिस्ट का पालन करते हैं?', type: 'yes-no', weight: 8 },
+      { id: 'bo3', text: 'Is order/job tracking visible and up-to-date?', textHindi: 'क्या ऑर्डर/जॉब ट्रैकिंग स्पष्ट और अपडेटेड है?', type: 'yes-no', weight: 9 },
+      { id: 'bo4', text: 'Do you maintain inventory with reorder levels?', textHindi: 'क्या आप रीऑर्डर लेवल के साथ इन्वेंट्री बनाए रखते हैं?', type: 'yes-no', weight: 8 },
+      { id: 'bo5', text: 'Are turnaround times (TAT) defined and measured?', textHindi: 'क्या टर्नअराउंड टाइम (TAT) परिभाषित और मापा जाता है?', type: 'yes-no', weight: 8 },
+      { id: 'bo6', text: 'Do you have supplier/vendor management practices?', textHindi: 'क्या आपके पास सप्लायर/वेंडर प्रबंधन की प्रक्रियाएँ हैं?', type: 'yes-no', weight: 7 },
+      { id: 'bo7', text: 'Do you run basic quality checks before delivery?', textHindi: 'क्या आप डिलीवरी से पहले बेसिक गुणवत्ता जांच करते हैं?', type: 'yes-no', weight: 7 },
+      { id: 'bo8', text: 'Is equipment/asset maintenance scheduled?', textHindi: 'क्या उपकरण/संपत्ति का रखरखाव निर्धारित है?', type: 'yes-no', weight: 7 },
+      { id: 'bo9', text: 'Do you have contingency plans for common risks?', textHindi: 'क्या आम जोखिमों के लिए आकस्मिक योजनाएँ हैं?', type: 'yes-no', weight: 7 },
+      { id: 'bo10', text: 'Do you define service levels and escalate issues?', textHindi: 'क्या आप सेवा स्तर निर्धारित करते हैं और मुद्दों को एस्केलेट करते हैं?', type: 'yes-no', weight: 6 }
+    ]
   }
 ];
