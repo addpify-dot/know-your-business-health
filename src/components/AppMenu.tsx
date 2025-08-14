@@ -1,8 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Menu, Share2, Download, Bot, LogOut, User } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useSubscription } from "@/hooks/useSubscription";
-import { Badge } from "@/components/ui/badge";
+import { Menu, Share2, Download, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   NavigationMenu,
@@ -23,8 +20,6 @@ import { getSavedAssessments } from "@/lib/storage";
 
 const AppMenu = () => {
   const location = useLocation();
-  const { user, signOut } = useAuth();
-  const { hasActiveSubscription } = useSubscription();
   const navigate = useNavigate();
   const isActive = (path: string) => location.pathname === path;
   const navLinkCls = ({ isActive }: { isActive: boolean }) =>
@@ -93,51 +88,28 @@ const AppMenu = () => {
                   </NavLink>
                 </NavigationMenuLink>
               </NavigationMenuItem>
-              {user && (
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <NavLink to="/dashboard" className={navLinkCls}>
-                      Dashboard
-                      {hasActiveSubscription && (
-                        <Badge variant="secondary" className="ml-1 text-xs">Premium</Badge>
-                      )}
-                    </NavLink>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              )}
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <NavLink to="/dashboard" className={navLinkCls}>
+                    Dashboard
+                  </NavLink>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
           <div className="flex items-center gap-2 ml-2">
-            {user ? (
-              <>
-                <Button variant="default" size="sm" onClick={() => window.dispatchEvent(new Event("bhc:open-ai-chat"))} className="hidden md:inline-flex">
-                  <Bot className="h-4 w-4 mr-2" />
-                  Smart With AI
-                  {!hasActiveSubscription && (
-                    <Badge variant="secondary" className="ml-1 text-xs">Premium</Badge>
-                  )}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleShareApp} className="hidden md:inline-flex">
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share App
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleDownloadResults} className="hidden md:inline-flex">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Results
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => signOut()} className="hidden md:inline-flex">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex">
-                <Link to="/auth">
-                  <User className="h-4 w-4 mr-2" />
-                  Login
-                </Link>
-              </Button>
-            )}
+            <Button variant="default" size="sm" onClick={() => window.dispatchEvent(new Event("bhc:open-ai-chat"))} className="hidden md:inline-flex">
+              <Bot className="h-4 w-4 mr-2" />
+              Smart With AI
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleShareApp} className="hidden md:inline-flex">
+              <Share2 className="h-4 w-4 mr-2" />
+              Share App
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownloadResults} className="hidden md:inline-flex">
+              <Download className="h-4 w-4 mr-2" />
+              Download Results
+            </Button>
           </div>
         </nav>
 
@@ -169,56 +141,29 @@ const AppMenu = () => {
                 >
                   Start Assessment
                 </Link>
-                {user ? (
-                  <>
-                    <Link
-                      to="/dashboard"
-                      className={cn(
-                        "rounded-md px-3 py-2 text-sm hover:bg-muted flex items-center",
-                        isActive("/dashboard")
-                          ? "text-primary font-medium"
-                          : "text-foreground/80"
-                      )}
-                    >
-                      Dashboard
-                      {hasActiveSubscription && (
-                        <Badge variant="secondary" className="ml-2 text-xs">Premium</Badge>
-                      )}
-                    </Link>
-                    <Link
-                      to="/subscription"
-                      className="rounded-md px-3 py-2 text-sm text-foreground/80 hover:bg-muted"
-                    >
-                      Subscription
-                    </Link>
-                    <Button onClick={() => window.dispatchEvent(new Event("bhc:open-ai-chat"))} className="justify-start">
-                      <Bot className="h-4 w-4 mr-2" />
-                      Smart With AI
-                      {!hasActiveSubscription && (
-                        <Badge variant="secondary" className="ml-2 text-xs">Premium</Badge>
-                      )}
-                    </Button>
-                    <Button onClick={handleShareApp} variant="ghost" className="justify-start">
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share App
-                    </Button>
-                    <Button onClick={handleDownloadResults} variant="outline" className="justify-start">
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Results
-                    </Button>
-                    <Button onClick={() => signOut()} variant="ghost" className="justify-start">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="ghost" className="justify-start" asChild>
-                    <Link to="/auth">
-                      <User className="h-4 w-4 mr-2" />
-                      Login
-                    </Link>
-                  </Button>
-                )}
+                <Link
+                  to="/dashboard"
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm hover:bg-muted",
+                    isActive("/dashboard")
+                      ? "text-primary font-medium"
+                      : "text-foreground/80"
+                  )}
+                >
+                  Dashboard
+                </Link>
+                <Button onClick={() => window.dispatchEvent(new Event("bhc:open-ai-chat"))} className="justify-start">
+                  <Bot className="h-4 w-4 mr-2" />
+                  Smart With AI
+                </Button>
+                <Button onClick={handleShareApp} variant="ghost" className="justify-start">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share App
+                </Button>
+                <Button onClick={handleDownloadResults} variant="outline" className="justify-start">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Results
+                </Button>
               </nav>
             </SheetContent>
           </Sheet>
