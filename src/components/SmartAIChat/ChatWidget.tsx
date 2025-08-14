@@ -3,10 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Settings } from "lucide-react";
+import { Bot, Send, X, Settings, Lock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { chatWithOpenAI, AIMessage } from "@/lib/ai";
 import { getSavedAssessments } from "@/lib/storage";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 // Minimal floating chat widget, global and context-aware
 const STORAGE_KEY = "bhc_ai_chat_thread_v1";
@@ -34,6 +38,9 @@ function t(lang: "en" | "hi", en: string, hi: string) {
 }
 
 export default function ChatWidget() {
+  const { user } = useAuth();
+  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -62,10 +69,20 @@ export default function ChatWidget() {
 
   // Open from global event
   useEffect(() => {
-    const handler = () => setOpen(true);
+    const handler = () => {
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+      if (!hasActiveSubscription && !subscriptionLoading) {
+        navigate('/subscription');
+        return;
+      }
+      setOpen(true);
+    };
     window.addEventListener("bhc:open-ai-chat", handler);
     return () => window.removeEventListener("bhc:open-ai-chat", handler);
-  }, []);
+  }, [user, hasActiveSubscription, subscriptionLoading, navigate]);
 
   const assessment = useAssessmentContext();
 
@@ -87,7 +104,7 @@ export default function ChatWidget() {
 
   // Seed greeting on first open if empty
   useEffect(() => {
-    if (open && messages.length === 0) {
+    if (open && messages.length === 0 && hasActiveSubscription) {
       const greeting: AIMessage = {
         role: "assistant",
         content: t(
@@ -98,7 +115,7 @@ export default function ChatWidget() {
       };
       setMessages([greeting]);
     }
-  }, [open]);
+  }, [open, hasActiveSubscription]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -129,11 +146,6 @@ export default function ChatWidget() {
     }
   };
 
-  const saveKey = () => {
-    localStorage.setItem(API_KEY_STORAGE, apiKey);
-    toast(t(lang, "API key saved.", "API की सेव हो गई।"));
-  };
-
   return (
     <div className="pointer-events-none">
       {/* Floating toggle is via events; the panel itself is here */}
@@ -144,79 +156,111 @@ export default function ChatWidget() {
               <div className="flex items-center gap-2">
                 <Bot className="w-4 h-4 text-primary" />
                 <div className="font-semibold">{t(lang, "Smart With AI", "स्मार्ट विद एआई")}</div>
+                {!hasActiveSubscription && (
+                  <Badge variant="secondary" className="text-xs">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Premium
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" aria-label="Settings" onClick={() => {
-                  const newKey = prompt(t(lang, "Enter OpenAI API key", "OpenAI API की दर्ज करें"), apiKey || "");
-                  if (newKey !== null) {
-                    setApiKey(newKey.trim());
-                    if (newKey.trim()) {
-                      localStorage.setItem(API_KEY_STORAGE, newKey.trim());
-                      toast(t(lang, "API key saved.", "API की सेव हो गई।"));
+                {hasActiveSubscription && (
+                  <Button variant="ghost" size="icon" aria-label="Settings" onClick={() => {
+                    const newKey = prompt(t(lang, "Enter OpenAI API key", "OpenAI API की दर्ज करें"), apiKey || "");
+                    if (newKey !== null) {
+                      setApiKey(newKey.trim());
+                      if (newKey.trim()) {
+                        localStorage.setItem(API_KEY_STORAGE, newKey.trim());
+                        toast(t(lang, "API key saved.", "API की सेव हो गई।"));
+                      }
                     }
-                  }
-                }}>
-                  <Settings className="w-4 h-4" />
-                </Button>
+                  }}>
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" aria-label="Close" onClick={() => setOpen(false)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </div>
 
-            {!apiKey && (
-              <div className="px-3 py-2 text-xs text-muted-foreground border-b">
-                {t(
-                  lang,
-                  "Add your OpenAI API key to chat. Stored locally in your browser.",
-                  "चैट के लिए अपना OpenAI API की जोड़ें। यह आपके ब्राउज़र में सुरक्षित रूप से संग्रहीत होगी।"
-                )}
-              </div>
-            )}
-
-            <ScrollArea className="max-h-80" ref={areaRef as any}>
-              <div className="p-3 space-y-3">
-                {messages.map((m, idx) => (
-                  <div key={idx} className={m.role === "assistant" ? "" : "text-right"}>
-                    <div className={`inline-block rounded-md px-3 py-2 text-sm ${
-                      m.role === "assistant" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
-                    }`}>
-                      {m.content}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            <div className="p-3 border-t space-y-2">
-              <div className="flex items-center gap-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={t(lang, "Ask anything about your business...", "अपने बिज़नेस से जुड़ा कोई भी सवाल पूछें...")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                />
-                <Button onClick={handleSend} disabled={loading}>
-                  <Send className="w-4 h-4" />
+            {!hasActiveSubscription ? (
+              <div className="p-6 text-center space-y-4">
+                <Lock className="w-12 h-12 mx-auto text-muted-foreground" />
+                <div>
+                  <h3 className="font-medium text-lg">AI Chatbot - Premium Feature</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {t(
+                      lang,
+                      "Get unlimited AI business advice for just ₹99/month",
+                      "केवल ₹99/महीना में असीमित AI बिजनेस सलाह पाएं"
+                    )}
+                  </p>
+                </div>
+                <Button onClick={() => navigate('/subscription')} className="w-full">
+                  {t(lang, "Upgrade to Premium", "प्रीमियम में अपग्रेड करें")}
                 </Button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  t(lang, "Create a 30-day action plan", "30 दिनों की एक्शन प्लान बनाएं"),
-                  t(lang, "Improve cash flow", "कैश फ्लो बेहतर करें"),
-                  t(lang, "Boost sales with low budget", "कम बजट में सेल्स बढ़ाएं"),
-                ].map((chip, i) => (
-                  <Button key={i} size="sm" variant="outline" onClick={() => setInput(chip)}>
-                    {chip}
-                  </Button>
-                ))}
-              </div>
-            </div>
+            ) : (
+              <>
+                {!apiKey && (
+                  <div className="px-3 py-2 text-xs text-muted-foreground border-b">
+                    {t(
+                      lang,
+                      "Add your OpenAI API key to chat. Stored locally in your browser.",
+                      "चैट के लिए अपना OpenAI API की जोड़ें। यह आपके ब्राउज़र में सुरक्षित रूप से संग्रहीत होगी।"
+                    )}
+                  </div>
+                )}
+
+                <ScrollArea className="max-h-80" ref={areaRef as any}>
+                  <div className="p-3 space-y-3">
+                    {messages.map((m, idx) => (
+                      <div key={idx} className={m.role === "assistant" ? "" : "text-right"}>
+                        <div className={`inline-block rounded-md px-3 py-2 text-sm ${
+                          m.role === "assistant" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
+                        }`}>
+                          {m.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+
+                <div className="p-3 border-t space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder={t(lang, "Ask anything about your business...", "अपने बिज़नेस से जुड़ा कोई भी सवाल पूछें...")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      disabled={!apiKey}
+                    />
+                    <Button onClick={handleSend} disabled={loading || !apiKey}>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {apiKey && (
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        t(lang, "Create a 30-day action plan", "30 दिनों की एक्शन प्लान बनाएं"),
+                        t(lang, "Improve cash flow", "कैश फ्लो बेहतर करें"),
+                        t(lang, "Boost sales with low budget", "कम बजट में सेल्स बढ़ाएं"),
+                      ].map((chip, i) => (
+                        <Button key={i} size="sm" variant="outline" onClick={() => setInput(chip)}>
+                          {chip}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </Card>
         </div>
       )}
