@@ -9,6 +9,8 @@ interface Subscription {
   subscription_end_date: string | null;
   plan_type: string;
   amount_paid: number;
+  upi_transaction_id: string | null;
+  created_at: string;
 }
 
 export function useSubscription() {
@@ -65,12 +67,40 @@ export function useSubscription() {
     }
   };
 
-  const submitPayment = async (transactionId: string) => {
+  const isTrialActive = () => {
+    if (!subscription) return false;
+    
+    const now = new Date();
+    const trialEnd = subscription.trial_end_date ? new Date(subscription.trial_end_date) : null;
+    
+    return subscription.status === 'free' && trialEnd && trialEnd > now;
+  };
+
+  const getDaysLeft = () => {
+    if (!subscription) return 0;
+    
+    const now = new Date();
+    let endDate: Date | null = null;
+
+    if (subscription.status === 'active' && subscription.subscription_end_date) {
+      endDate = new Date(subscription.subscription_end_date);
+    } else if (subscription.status === 'free' && subscription.trial_end_date) {
+      endDate = new Date(subscription.trial_end_date);
+    }
+
+    if (endDate && endDate > now) {
+      return Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    return 0;
+  };
+
+  const submitUpiTransaction = async (transactionId: string) => {
     if (!user || !subscription) return { error: 'No user or subscription found' };
 
     try {
-      // Insert UPI transaction
-      const { error: transactionError } = await supabase
+      // First, create the UPI transaction record
+      const { data: transactionData, error: transactionError } = await supabase
         .from('upi_transactions')
         .insert({
           user_id: user.id,
@@ -78,7 +108,9 @@ export function useSubscription() {
           transaction_id: transactionId,
           amount: 99,
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
       if (transactionError) {
         return { error: transactionError.message };
@@ -99,10 +131,10 @@ export function useSubscription() {
 
       // Refresh subscription data
       await fetchSubscription();
-      
-      return { error: null };
+
+      return { success: true };
     } catch (error) {
-      return { error: 'Failed to submit payment' };
+      return { error: 'Failed to submit transaction' };
     }
   };
 
@@ -110,7 +142,9 @@ export function useSubscription() {
     subscription,
     loading,
     hasActiveSubscription,
-    submitPayment,
+    isTrialActive: isTrialActive(),
+    daysLeft: getDaysLeft(),
+    submitUpiTransaction,
     refetch: fetchSubscription
   };
 }
