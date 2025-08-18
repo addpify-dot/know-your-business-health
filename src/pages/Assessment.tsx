@@ -22,7 +22,7 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
   const [functionAnswers, setFunctionAnswers] = useState<Record<string, any>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  const totalSteps = 4;
+  const totalSteps = 2;
   const currentIndustry = industries.find(i => i.id === selectedIndustry);
   const currentFunction = businessFunctions.find(f => f.id === selectedFunction);
 
@@ -52,7 +52,6 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
     };
 
     let industryScore = 0;
-    let functionScore = 0;
 
     if (currentIndustry) {
       const questions = currentIndustry.questions;
@@ -61,16 +60,9 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
       industryScore = totalPossible > 0 ? Math.round((earned / totalPossible) * 100) : 0;
     }
 
-    if (currentFunction) {
-      const questions = currentFunction.questions;
-      const totalPossible = questions.length * 5;
-      const earned = questions.reduce((acc, q) => acc + getPoints(functionAnswers[q.id]), 0);
-      functionScore = totalPossible > 0 ? Math.round((earned / totalPossible) * 100) : 0;
-    }
+    const overallScore = industryScore;
 
-    const overallScore = Math.round(((industryScore || 0) + (functionScore || 0)) / 2);
-
-    return { overall: overallScore, industry: industryScore, function: functionScore };
+    return { overall: overallScore, industry: industryScore };
   };
 
   const generateRecommendations = () => {
@@ -111,22 +103,11 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
       if (currentQuestionIndex < currentIndustry.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
-        setStep(3);
-        setCurrentQuestionIndex(0);
-      }
-    } else if (step === 3 && selectedFunction) {
-      setStep(4);
-    } else if (step === 4 && currentFunction) {
-      if (currentQuestionIndex < currentFunction.questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
         const scores = calculateScores();
         const recommendations = generateRecommendations();
         onComplete({
           industry: selectedIndustry,
-          businessFunction: selectedFunction,
           industryAnswers,
-          functionAnswers,
           scores,
           recommendations
         });
@@ -150,11 +131,6 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
     if (step === 2 && currentIndustry) {
       const currentQuestion = currentIndustry.questions[currentQuestionIndex];
       return industryAnswers[currentQuestion.id] !== undefined;
-    }
-    if (step === 3) return selectedFunction;
-    if (step === 4 && currentFunction) {
-      const currentQuestion = currentFunction.questions[currentQuestionIndex];
-      return functionAnswers[currentQuestion.id] !== undefined;
     }
     return false;
   };
@@ -205,63 +181,6 @@ export const AssessmentPage = ({ onComplete }: AssessmentPageProps) => {
             </div>
           )}
 
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-foreground">
-                  {language === 'hi' ? 'व्यापार फ़ंक्शन चुनें' : 'Select Business Function'}
-                </h2>
-                <p className="text-muted-foreground">
-                  {language === 'hi' 
-                    ? 'कौन सा व्यापार फ़ंक्शन आप जांचना चाहते हैं?'
-                    : 'Which business function would you like to assess?'
-                  }
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {businessFunctions.map((func) => (
-                  <Card 
-                    key={func.id}
-                    className={cn(
-                      "p-6 cursor-pointer transition-all duration-300 hover:shadow-card hover:scale-105",
-                      selectedFunction === func.id && "ring-2 ring-primary bg-primary/5"
-                    )}
-                    onClick={() => handleFunctionSelect(func.id)}
-                  >
-                    <div className="text-center space-y-3">
-                      <div className="text-3xl">{func.icon}</div>
-                      <div className="font-semibold">
-                        {language === 'hi' ? func.nameHindi || func.name : func.name}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {step === 4 && currentFunction && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-foreground mb-2">
-                  {language === 'hi' ? 'फ़ंक्शन प्रश्न' : 'Function Questions'}
-                </h2>
-                <p className="text-muted-foreground">
-                  {language === 'hi' 
-                    ? `प्रश्न ${currentQuestionIndex + 1} / ${currentFunction.questions.length}`
-                    : `Question ${currentQuestionIndex + 1} of ${currentFunction.questions.length}`
-                  }
-                </p>
-              </div>
-              <QuestionCard
-                question={currentFunction.questions[currentQuestionIndex]}
-                answer={functionAnswers[currentFunction.questions[currentQuestionIndex].id]}
-                onAnswer={handleFunctionAnswer}
-                language={language}
-              />
-            </div>
-          )}
         </div>
 
         {/* Navigation */}

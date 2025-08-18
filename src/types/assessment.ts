@@ -25,13 +25,13 @@ export interface BusinessFunction {
 
 export interface Assessment {
   industry: string;
-  businessFunction: string;
+  businessFunction?: string;
   industryAnswers: Record<string, any>;
-  functionAnswers: Record<string, any>;
+  functionAnswers?: Record<string, any>;
   scores: {
     overall: number;
     industry: number;
-    function: number;
+    function?: number;
   };
   recommendations: string[];
 }

@@ -93,6 +93,13 @@ const AppMenu = () => {
                   </NavLink>
                 </NavigationMenuLink>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <NavLink to="/startup-planning" className={navLinkCls}>
+                    Startup Planning
+                  </NavLink>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
               {user && (
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
@@ -168,6 +175,17 @@ const AppMenu = () => {
                   className="rounded-md px-3 py-2 text-sm text-foreground/80 hover:bg-muted"
                 >
                   Start Assessment
+                </Link>
+                <Link
+                  to="/startup-planning"
+                  className={cn(
+                    "rounded-md px-3 py-2 text-sm hover:bg-muted",
+                    isActive("/startup-planning")
+                      ? "text-primary font-medium"
+                      : "text-foreground/80"
+                  )}
+                >
+                  Startup Planning
                 </Link>
                 {user ? (
                   <>

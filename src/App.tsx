@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Subscription from "./pages/Subscription";
+import StartupPlanning from "./pages/StartupPlanning";
 import NotFound from "./pages/NotFound";
 import AppMenu from "./components/AppMenu";
 import ChatWidget from "./components/SmartAIChat/ChatWidget";
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/startup-planning" element={<StartupPlanning />} />
             <Route path="/subscription" element={
               <ProtectedRoute>
                 <Subscription />
