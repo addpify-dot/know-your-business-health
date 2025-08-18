@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Bot, Send, X, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getSavedAssessments } from "@/lib/storage";
@@ -142,59 +142,34 @@ export default function RuleBasedChatWidget() {
 
   const quickSuggestions = chatEngine.getQuickSuggestions();
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && open) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
-
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetContent 
-        side="bottom" 
-        className="h-[90vh] sm:h-[85vh] w-full max-w-none p-0 flex flex-col"
-      >
-        {/* Header */}
-        <SheetHeader className="px-6 py-4 border-b bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Bot className="w-6 h-6 text-primary" />
+    <div className="pointer-events-none">
+      {/* Floating toggle is via events; the panel itself is here */}
+      {open && (
+        <div className="fixed bottom-4 right-4 z-50 w-[min(100vw-1rem,380px)] pointer-events-auto">
+          <Card className="shadow-xl border bg-background">
+            <div className="flex items-center justify-between px-3 py-2 border-b">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-primary" />
+                <div className="font-semibold">{t(lang, "Smart Business AI", "स्मार्ट बिजनेस AI")}</div>
+                {!hasActiveSubscription && (
+                  <Badge variant="secondary" className="text-xs">
+                    <Lock className="w-3 h-3 mr-1" />
+                    Premium
+                  </Badge>
+                )}
               </div>
-              <div>
-                <div className="text-lg font-semibold">
-                  {t(lang, "Smart Business AI", "स्मार्ट बिजनेस AI")}
-                </div>
-                <div className="text-sm text-muted-foreground font-normal">
-                  {t(lang, "Your AI Business Coach", "आपका AI बिजनेस कोच")}
-                </div>
-              </div>
-              {!hasActiveSubscription && (
-                <Badge variant="secondary" className="ml-auto">
-                  <Lock className="w-3 h-3 mr-1" />
-                  Premium
-                </Badge>
-              )}
-            </SheetTitle>
-          </div>
-        </SheetHeader>
+              <Button variant="ghost" size="icon" aria-label="Close" onClick={() => setOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {!hasActiveSubscription ? (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="text-center space-y-6 max-w-md">
-                <div className="p-4 rounded-full bg-muted w-20 h-20 mx-auto flex items-center justify-center">
-                  <Lock className="w-10 h-10 text-muted-foreground" />
-                </div>
+            {!hasActiveSubscription ? (
+              <div className="p-6 text-center space-y-4">
+                <Lock className="w-12 h-12 mx-auto text-muted-foreground" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">AI Business Coach - Premium Feature</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="font-medium text-lg">AI Business Coach - Premium Feature</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
                     {t(
                       lang,
                       "Get unlimited AI business coaching for just ₹99/month",
@@ -202,89 +177,74 @@ export default function RuleBasedChatWidget() {
                     )}
                   </p>
                 </div>
-                <Button onClick={() => navigate('/subscription')} size="lg" className="w-full">
+                <Button onClick={() => navigate('/subscription')} className="w-full">
                   {t(lang, "Upgrade to Premium", "प्रीमियम में अपग्रेड करें")}
                 </Button>
               </div>
-            </div>
-          ) : (
-            <>
-              {/* Chat Messages */}
-              <ScrollArea className="flex-1 px-6" ref={areaRef as any}>
-                <div className="py-6 space-y-4">
-                  {messages.map((m, idx) => (
-                    <div key={idx} className={`flex ${m.role === "assistant" ? "justify-start" : "justify-end"}`}>
-                      <div className={`max-w-[80%] sm:max-w-[70%] rounded-2xl px-4 py-3 whitespace-pre-wrap ${
-                        m.role === "assistant" 
-                          ? "bg-muted text-foreground rounded-bl-sm" 
-                          : "bg-primary text-primary-foreground rounded-br-sm"
-                      }`}>
-                        {m.content}
+            ) : (
+              <>
+                <ScrollArea className="max-h-80" ref={areaRef as any}>
+                  <div className="p-3 space-y-3">
+                    {messages.map((m, idx) => (
+                      <div key={idx} className={m.role === "assistant" ? "" : "text-right"}>
+                        <div className={`inline-block rounded-md px-3 py-2 text-sm max-w-[85%] whitespace-pre-wrap ${
+                          m.role === "assistant" 
+                            ? "bg-muted text-foreground" 
+                            : "bg-primary text-primary-foreground"
+                        }`}>
+                          {m.content}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {loading && (
-                    <div className="flex justify-start">
-                      <div className="flex items-center gap-3 bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
-                        <Bot className="w-4 h-4 animate-pulse" />
+                    ))}
+                    {loading && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Bot className="w-4 h-4" />
                         <div className="text-sm">
                           {t(lang, "Thinking...", "सोच रहा हूं...")}
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+                    )}
+                  </div>
+                </ScrollArea>
 
-              {/* Quick Suggestions */}
-              {quickSuggestions.length > 0 && (
-                <div className="px-6 py-2 border-t bg-background/50">
-                  <div className="flex gap-2 overflow-x-auto">
-                    {quickSuggestions.slice(0, 4).map((suggestion, i) => (
+                <div className="p-3 border-t space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      placeholder={t(lang, "Ask about your business...", "अपने बिज़नेस के बारे में पूछें...")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      disabled={loading}
+                    />
+                    <Button onClick={handleSend} disabled={loading || !input.trim()}>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {quickSuggestions.slice(0, 3).map((suggestion, i) => (
                       <Button 
                         key={i} 
                         size="sm" 
                         variant="outline" 
                         onClick={() => setInput(suggestion)}
-                        className="text-xs whitespace-nowrap flex-shrink-0"
+                        className="text-xs"
                       >
                         {suggestion}
                       </Button>
                     ))}
                   </div>
                 </div>
-              )}
-
-              {/* Input Area */}
-              <div className="px-6 py-4 border-t bg-background/95 backdrop-blur-sm">
-                <div className="flex items-center gap-3">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder={t(lang, "Ask about your business...", "अपने बिज़नेस के बारे में पूछें...")}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    disabled={loading}
-                    className="flex-1 h-12 text-base"
-                  />
-                  <Button 
-                    onClick={handleSend} 
-                    disabled={loading || !input.trim()}
-                    size="lg"
-                    className="h-12 px-6"
-                  >
-                    <Send className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </Card>
         </div>
-      </SheetContent>
-    </Sheet>
+      )}
+    </div>
   );
 }
